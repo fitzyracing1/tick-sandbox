@@ -1,0 +1,39 @@
+name: throwaway-job
+
+on:
+  workflow_dispatch:
+    inputs:
+      job_id:
+        description: Unique job identifier
+        required: true
+        type: string
+      command:
+        description: Shell command to run in the throwaway container
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    name: "job ${{ inputs.job_id }}"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run command
+        id: run
+        run: |
+          set +e
+          echo "job_id=${{ inputs.job_id }}"
+          bash -lc '${{ inputs.command }}'
+          rc=$?
+          if [ "$rc" -eq 0 ]; then
+            echo "result=lit" >> "$GITHUB_OUTPUT"
+            echo "### Result: lit" >> "$GITHUB_STEP_SUMMARY"
+            echo "job_id=\`${{ inputs.job_id }}\` ended **lit**." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "result=dark" >> "$GITHUB_OUTPUT"
+            echo "### Result: dark" >> "$GITHUB_STEP_SUMMARY"
+            echo "job_id=\`${{ inputs.job_id }}\` ended **dark** (exit $rc)." >> "$GITHUB_STEP_SUMMARY"
+            exit "$rc"
+          fi

@@ -1,0 +1,4 @@
+{
+  "job_id": "hello-1",
+  "command": "echo hello && true"
+}

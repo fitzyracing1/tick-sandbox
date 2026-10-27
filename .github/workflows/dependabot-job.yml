@@ -1,0 +1,36 @@
+name: dependabot-job
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    name: dependabot throwaway job
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run program for this PR
+        id: run
+        run: |
+          set +e
+          JOB_ID="dependabot-pr-${{ github.event.pull_request.number }}"
+          echo "job_id=$JOB_ID"
+          # Same throwaway pattern: exercise the supervisor dry-run path briefly
+          python3 -c "import supervisor; print('import ok', supervisor.TICK_HZ)"
+          python3 supervisor.py --dry-run --max-ticks 3 --inbox inbox
+          rc=$?
+          if [ "$rc" -eq 0 ]; then
+            echo "### Result: lit" >> "$GITHUB_STEP_SUMMARY"
+            echo "dependabot job_id=\`$JOB_ID\` ended **lit**." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "### Result: dark" >> "$GITHUB_STEP_SUMMARY"
+            echo "dependabot job_id=\`$JOB_ID\` ended **dark** (exit $rc)." >> "$GITHUB_STEP_SUMMARY"
+            exit "$rc"
+          fi

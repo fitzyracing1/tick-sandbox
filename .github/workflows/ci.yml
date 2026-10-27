@@ -1,0 +1,41 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install test deps
+        run: pip install -r requirements-dev.txt
+
+      - name: Run tests
+        id: test
+        run: |
+          set +e
+          python -m pytest -q
+          rc=$?
+          if [ "$rc" -eq 0 ]; then
+            echo "### Result: lit" >> "$GITHUB_STEP_SUMMARY"
+            echo "CI tests ended **lit**." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "### Result: dark" >> "$GITHUB_STEP_SUMMARY"
+            echo "CI tests ended **dark** (exit $rc)." >> "$GITHUB_STEP_SUMMARY"
+            exit "$rc"
+          fi
